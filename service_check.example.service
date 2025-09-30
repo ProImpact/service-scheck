@@ -1,0 +1,17 @@
+[Unit]
+Description=Service Check
+Documentation=https://github.com/ProImpact/service-check
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=services
+WorkingDirectory=/services
+ExecStart=/services/on_startup/service_check
+Restart=on-failure
+RestartSec=5
+Environment=ENV_VAR1=value1 ENV_VAR2=value2
+
+[Install]
+WantedBy=multi-user.target

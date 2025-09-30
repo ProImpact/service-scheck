@@ -1,0 +1,5 @@
+{
+    "port": 1234,
+    "database_name": "service_check.db",
+    "logs_dir": "/home/k8s-server/work/service-check/logs/"
+}

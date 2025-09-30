@@ -1,0 +1,4 @@
+{
+    "port": 1234,
+    "database_name": "service_check.db"
+}
