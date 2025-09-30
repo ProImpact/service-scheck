@@ -1,0 +1,4 @@
+build
+logs
+service_check.db 
+*_service
