@@ -35,11 +35,16 @@ func (repo *ServiceRepository) CreateService(service model.Service) error {
 			ID:                 hex.EncodeToString(sha256.New().Sum([]byte(service.ServiceName))),
 			ServiceName:        service.ServiceName,
 			StartupTime:        time.Now(),
-			Status:             string(model.Ready),
-			Command:            service.Command,
-			HealtcheckEndpoint: service.HealtCheckEndpoint,
+			Status:             string(model.Bootstraping),
+			CommandType:        service.Check.Type,
+			ExecuteCommand:     service.ExecCommand,
+			HealtcheckEndpoint: service.Check.CheckCommand,
 			PingTime:           service.PingTime.String(),
 			Pid:                int64(service.Pid),
+			CmdCheckCommand: sql.NullString{
+				String: service.Check.CheckCommand,
+				Valid:  true,
+			},
 		})
 	}
 	if err == nil {
@@ -61,19 +66,35 @@ func (repo *ServiceRepository) GetService(serviceName string) (*model.Service, e
 	if err != nil {
 		slog.Error(err.Error())
 	}
+	if dbService.CommandType == model.CMD {
+		return &model.Service{
+			ServiceName: dbService.ServiceName,
+			StartupTime: startupTime,
+			UpTime:      time.Since(startupTime),
+			Status:      model.ServiceStatus(dbService.Status),
+			Check: model.Check{
+				Type:         model.CMD,
+				CheckCommand: dbService.CmdCheckCommand.String,
+			},
+			PingTime: &pingTime,
+			Pid:      int(dbService.Pid),
+		}, nil
+	}
 	return &model.Service{
-		ServiceName:        dbService.ServiceName,
-		StartupTime:        startupTime,
-		UpTime:             time.Since(startupTime),
-		Status:             model.ServiceStatus(dbService.Status),
-		Command:            dbService.Command,
-		HealtCheckEndpoint: dbService.HealtcheckEndpoint,
-		PingTime:           &pingTime,
-		Pid:                int(dbService.Pid),
+		ServiceName: dbService.ServiceName,
+		StartupTime: startupTime,
+		UpTime:      time.Since(startupTime),
+		Status:      model.ServiceStatus(dbService.Status),
+		Check: model.Check{
+			Type:         model.REST,
+			CheckCommand: dbService.HealtcheckEndpoint,
+		},
+		PingTime: &pingTime,
+		Pid:      int(dbService.Pid),
 	}, nil
 }
 
-func (repo *ServiceRepository) UpdateService(params model.UpdateServiceParams) error {
+func (repo *ServiceRepository) UpdateServiceStatus(params model.UpdateServiceParams) error {
 	if params.ServiceName == nil {
 		return errors.New("service name not specified in the update")
 	}
@@ -90,23 +111,9 @@ func (repo *ServiceRepository) UpdateService(params model.UpdateServiceParams) e
 	if params.ServiceName != nil {
 		srv.ServiceName = *params.ServiceName
 	}
-	if params.Command != nil {
-		srv.Command = *params.Command
-	}
-	if params.HealtCheckEndpoint != nil {
-		srv.HealtcheckEndpoint = *params.HealtCheckEndpoint
-	}
-	if params.PingTime != nil {
-		srv.PingTime = params.PingTime.String()
-	}
-	return repo.queries.ServiceFullUpdate(context.Background(), db.ServiceFullUpdateParams{
-		ServiceName:        srv.ServiceName,
-		Status:             srv.Status,
-		Command:            srv.Command,
-		HealtcheckEndpoint: srv.HealtcheckEndpoint,
-		PingTime:           srv.PingTime,
-		ServiceName_2:      *params.ServiceName,
-		Pid:                srv.Pid,
+	return repo.queries.ServiceUpdateStatus(context.Background(), db.ServiceUpdateStatusParams{
+		Status:      srv.Status,
+		ServiceName: srv.ServiceName,
 	})
 }
 
@@ -134,15 +141,32 @@ func (repo *ServiceRepository) GetAllServices() ([]model.Service, error) {
 		if err != nil {
 			return nil, err
 		}
+		if srv.CommandType == model.REST {
+			m = append(m, model.Service{
+				ServiceName: srv.ServiceName,
+				StartupTime: startupTime,
+				UpTime:      time.Since(startupTime),
+				Status:      model.ServiceStatus(srv.Status),
+				Check: model.Check{
+					Type:         model.REST,
+					CheckCommand: srv.HealtcheckEndpoint,
+				},
+				PingTime: &pingTime,
+				Pid:      int(srv.Pid),
+			})
+			continue
+		}
 		m = append(m, model.Service{
-			ServiceName:        srv.ServiceName,
-			StartupTime:        startupTime,
-			UpTime:             time.Since(startupTime),
-			Status:             model.ServiceStatus(srv.Status),
-			Command:            srv.Command,
-			HealtCheckEndpoint: srv.HealtcheckEndpoint,
-			PingTime:           &pingTime,
-			Pid:                int(srv.Pid),
+			ServiceName: srv.ServiceName,
+			StartupTime: startupTime,
+			UpTime:      time.Since(startupTime),
+			Status:      model.ServiceStatus(srv.Status),
+			Check: model.Check{
+				Type:         model.CMD,
+				CheckCommand: srv.CmdCheckCommand.String,
+			},
+			PingTime: &pingTime,
+			Pid:      int(srv.Pid),
 		})
 	}
 	return m, nil

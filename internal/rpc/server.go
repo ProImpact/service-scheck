@@ -47,7 +47,7 @@ func CreateRPCServer(repo *repository.ServiceRepository, port int, logsDir strin
 }
 
 type ServiceArgs struct {
-	Service model.ServiceCreate
+	Service model.ServiceCreate `json:"service"`
 }
 
 type ServiceArgsUpdate struct {
@@ -77,43 +77,21 @@ func (s *Server) CreateService(args *ServiceArgs, reply *bool) error {
 			return err
 		}
 	}
-	stdoutFile := path.Join(s.LogsDir, args.Service.ServiceName, "stdout.log")
-	fstdout, err := os.Open(stdoutFile)
+	fstdout, fstderr, err := pkg.CreateLogsServicesFolderStructure(s.LogsDir, args.Service.ServiceName)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			fstdout, err = os.Create(stdoutFile)
-			if err != nil {
-				*reply = false
-				return err
-			}
-		} else {
-			*reply = false
-			return err
-		}
+		return err
 	}
-	stderrFile := path.Join(s.LogsDir, args.Service.ServiceName, "stderr.log")
-	fstderr, err := os.Open(stderrFile)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			fstderr, err = os.Create(stderrFile)
-			if err != nil {
-				*reply = false
-				return err
-			}
-		} else {
-			*reply = false
-			return err
-		}
-	}
-	comand := strings.Split(args.Service.Command, " ")
+	comand := strings.Split(args.Service.Check.CheckCommand, " ")
 	duration, err := time.ParseDuration(args.Service.PingTime)
 	if err != nil {
 		return err
 	}
 	pid, err := s.Serv.CreateService(
 		args.Service.ServiceName,
-		args.Service.HealtCheckEndpoint,
-		comand[0],
+		args.Service.Check.CheckCommand,
+		args.Service.Check.Type,
+		args.Service.Command,
+		args.Service.Check.CheckCommand,
 		duration,
 		fstdout,
 		fstderr,
@@ -124,13 +102,13 @@ func (s *Server) CreateService(args *ServiceArgs, reply *bool) error {
 		return err
 	}
 	err = s.Repo.CreateService(model.Service{
-		ServiceName:        args.Service.ServiceName,
-		StartupTime:        time.Now(),
-		Status:             model.Ready,
-		Command:            args.Service.Command,
-		HealtCheckEndpoint: args.Service.HealtCheckEndpoint,
-		PingTime:           &duration,
-		Pid:                pid,
+		ServiceName: args.Service.ServiceName,
+		StartupTime: time.Now(),
+		Status:      model.Bootstraping,
+		Check:       args.Service.Check,
+		PingTime:    &duration,
+		Pid:         pid,
+		ExecCommand: args.Service.Command,
 	})
 	if err != nil {
 		*reply = false
@@ -165,19 +143,6 @@ func (s *Server) Logs(args *ServiceNameArgs, reply *ServiceLogsReply) error {
 	*reply = ServiceLogsReply{
 		Data: string(data),
 	}
-	return nil
-}
-
-func (s *Server) UpdateService(args *ServiceArgsUpdate, reply *bool) error {
-	err := s.Repo.UpdateService(model.UpdateServiceParams{
-		Status:      args.Service.Status,
-		ServiceName: args.Service.ServiceName,
-	})
-	if err != nil {
-		*reply = false
-		return err
-	}
-	*reply = true
 	return nil
 }
 

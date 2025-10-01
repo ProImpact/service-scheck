@@ -15,6 +15,7 @@ type Querier interface {
 	ServiceFullUpdate(ctx context.Context, arg ServiceFullUpdateParams) error
 	ServiceGetAll(ctx context.Context) ([]Service, error)
 	ServiceGetByName(ctx context.Context, serviceName string) (Service, error)
+	ServiceUpdateStatus(ctx context.Context, arg ServiceUpdateStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

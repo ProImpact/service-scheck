@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const serviceChangeStatus = `-- name: ServiceChangeStatus :exec
@@ -24,28 +25,32 @@ func (q *Queries) ServiceChangeStatus(ctx context.Context, arg ServiceChangeStat
 }
 
 const serviceCreate = `-- name: ServiceCreate :exec
-INSERT INTO "services" ("id","service_name","startup_time","status","command","healtcheck_endpoint","ping_time","pid")
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO "services" ("id","service_name","command_type","cmd_check_command","startup_time","status","execute_command","healtcheck_endpoint","ping_time","pid")
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type ServiceCreateParams struct {
-	ID                 string      `json:"id"`
-	ServiceName        string      `json:"service_name"`
-	StartupTime        interface{} `json:"startup_time"`
-	Status             string      `json:"status"`
-	Command            string      `json:"command"`
-	HealtcheckEndpoint string      `json:"healtcheck_endpoint"`
-	PingTime           string      `json:"ping_time"`
-	Pid                int64       `json:"pid"`
+	ID                 string         `json:"id"`
+	ServiceName        string         `json:"service_name"`
+	CommandType        string         `json:"command_type"`
+	CmdCheckCommand    sql.NullString `json:"cmd_check_command"`
+	StartupTime        interface{}    `json:"startup_time"`
+	Status             string         `json:"status"`
+	ExecuteCommand     string         `json:"execute_command"`
+	HealtcheckEndpoint string         `json:"healtcheck_endpoint"`
+	PingTime           string         `json:"ping_time"`
+	Pid                int64          `json:"pid"`
 }
 
 func (q *Queries) ServiceCreate(ctx context.Context, arg ServiceCreateParams) error {
 	_, err := q.db.ExecContext(ctx, serviceCreate,
 		arg.ID,
 		arg.ServiceName,
+		arg.CommandType,
+		arg.CmdCheckCommand,
 		arg.StartupTime,
 		arg.Status,
-		arg.Command,
+		arg.ExecuteCommand,
 		arg.HealtcheckEndpoint,
 		arg.PingTime,
 		arg.Pid,
@@ -66,38 +71,44 @@ const serviceFullUpdate = `-- name: ServiceFullUpdate :exec
 UPDATE services SET 
     "service_name" = ?,
     "status" = ?,
-    "command" = ?,
+    "execute_command" = ?,
     "healtcheck_endpoint" = ?,
     "ping_time" = ?,
-    "pid" = ?
+    "pid" = ?,
+    "command_type" = ?,
+    "cmd_check_command" = ?
 WHERE "service_name" = ?
 `
 
 type ServiceFullUpdateParams struct {
-	ServiceName        string `json:"service_name"`
-	Status             string `json:"status"`
-	Command            string `json:"command"`
-	HealtcheckEndpoint string `json:"healtcheck_endpoint"`
-	PingTime           string `json:"ping_time"`
-	Pid                int64  `json:"pid"`
-	ServiceName_2      string `json:"service_name_2"`
+	ServiceName        string         `json:"service_name"`
+	Status             string         `json:"status"`
+	ExecuteCommand     string         `json:"execute_command"`
+	HealtcheckEndpoint string         `json:"healtcheck_endpoint"`
+	PingTime           string         `json:"ping_time"`
+	Pid                int64          `json:"pid"`
+	CommandType        string         `json:"command_type"`
+	CmdCheckCommand    sql.NullString `json:"cmd_check_command"`
+	ServiceName_2      string         `json:"service_name_2"`
 }
 
 func (q *Queries) ServiceFullUpdate(ctx context.Context, arg ServiceFullUpdateParams) error {
 	_, err := q.db.ExecContext(ctx, serviceFullUpdate,
 		arg.ServiceName,
 		arg.Status,
-		arg.Command,
+		arg.ExecuteCommand,
 		arg.HealtcheckEndpoint,
 		arg.PingTime,
 		arg.Pid,
+		arg.CommandType,
+		arg.CmdCheckCommand,
 		arg.ServiceName_2,
 	)
 	return err
 }
 
 const serviceGetAll = `-- name: ServiceGetAll :many
-SELECT id, service_name, startup_time, status, command, healtcheck_endpoint, ping_time, pid FROM "services"
+SELECT id, service_name, startup_time, status, command_type, cmd_check_command, execute_command, healtcheck_endpoint, ping_time, pid FROM "services"
 `
 
 func (q *Queries) ServiceGetAll(ctx context.Context) ([]Service, error) {
@@ -114,7 +125,9 @@ func (q *Queries) ServiceGetAll(ctx context.Context) ([]Service, error) {
 			&i.ServiceName,
 			&i.StartupTime,
 			&i.Status,
-			&i.Command,
+			&i.CommandType,
+			&i.CmdCheckCommand,
+			&i.ExecuteCommand,
 			&i.HealtcheckEndpoint,
 			&i.PingTime,
 			&i.Pid,
@@ -133,7 +146,7 @@ func (q *Queries) ServiceGetAll(ctx context.Context) ([]Service, error) {
 }
 
 const serviceGetByName = `-- name: ServiceGetByName :one
-SELECT id, service_name, startup_time, status, command, healtcheck_endpoint, ping_time, pid FROM "services" WHERE "service_name" = ?
+SELECT id, service_name, startup_time, status, command_type, cmd_check_command, execute_command, healtcheck_endpoint, ping_time, pid FROM "services" WHERE "service_name" = ?
 `
 
 func (q *Queries) ServiceGetByName(ctx context.Context, serviceName string) (Service, error) {
@@ -144,10 +157,28 @@ func (q *Queries) ServiceGetByName(ctx context.Context, serviceName string) (Ser
 		&i.ServiceName,
 		&i.StartupTime,
 		&i.Status,
-		&i.Command,
+		&i.CommandType,
+		&i.CmdCheckCommand,
+		&i.ExecuteCommand,
 		&i.HealtcheckEndpoint,
 		&i.PingTime,
 		&i.Pid,
 	)
 	return i, err
+}
+
+const serviceUpdateStatus = `-- name: ServiceUpdateStatus :exec
+UPDATE services SET 
+    "status" = ?
+WHERE "service_name" = ?
+`
+
+type ServiceUpdateStatusParams struct {
+	Status      string `json:"status"`
+	ServiceName string `json:"service_name"`
+}
+
+func (q *Queries) ServiceUpdateStatus(ctx context.Context, arg ServiceUpdateStatusParams) error {
+	_, err := q.db.ExecContext(ctx, serviceUpdateStatus, arg.Status, arg.ServiceName)
+	return err
 }

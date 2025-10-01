@@ -4,13 +4,19 @@
 
 package db
 
+import (
+	"database/sql"
+)
+
 type Service struct {
-	ID                 string      `json:"id"`
-	ServiceName        string      `json:"service_name"`
-	StartupTime        interface{} `json:"startup_time"`
-	Status             string      `json:"status"`
-	Command            string      `json:"command"`
-	HealtcheckEndpoint string      `json:"healtcheck_endpoint"`
-	PingTime           string      `json:"ping_time"`
-	Pid                int64       `json:"pid"`
+	ID                 string         `json:"id"`
+	ServiceName        string         `json:"service_name"`
+	StartupTime        interface{}    `json:"startup_time"`
+	Status             string         `json:"status"`
+	CommandType        string         `json:"command_type"`
+	CmdCheckCommand    sql.NullString `json:"cmd_check_command"`
+	ExecuteCommand     string         `json:"execute_command"`
+	HealtcheckEndpoint string         `json:"healtcheck_endpoint"`
+	PingTime           string         `json:"ping_time"`
+	Pid                int64          `json:"pid"`
 }

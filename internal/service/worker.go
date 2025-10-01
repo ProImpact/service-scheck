@@ -2,7 +2,10 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/ProImpact/service-check/internal/repository"
@@ -12,8 +15,8 @@ import (
 
 // BackgroundProcessCheker check for the healtyness of a service
 type BackgroundProcessCheker struct {
-	PID int
-	model.Service
+	PID          int
+	Service      *model.Service
 	done         chan struct{}
 	Errors       chan error
 	repo         *repository.ServiceRepository
@@ -24,7 +27,7 @@ var ErrServiceUnabailable = errors.New("service unavailable")
 
 func NewBackgroundProcessChecker(serv *model.Service, repo *repository.ServiceRepository, pid int, cleaner []func() error) *BackgroundProcessCheker {
 	return &BackgroundProcessCheker{
-		Service: *serv,
+		Service: serv,
 		done:    make(chan struct{}),
 		Errors:  make(chan error),
 		PID:     pid,
@@ -45,44 +48,82 @@ func (b *BackgroundProcessCheker) Close() {
 }
 
 func (b *BackgroundProcessCheker) Run() {
-	tick := time.NewTicker(*b.PingTime)
+	tick := time.NewTicker(*b.Service.PingTime)
+	slog.Info("running background processor for", "service", b.Service.ServiceName)
 	go func() {
 		down := model.Down
 	FOR:
 		for {
 			select {
 			case <-tick.C:
-				resp := httpclient.MakeRequest(b.HealtCheckEndpoint)
-				if resp == nil {
-					err := b.repo.UpdateService(model.UpdateServiceParams{
-						Status:      &down,
-						ServiceName: &b.ServiceName,
-					})
-					if err != nil {
+				if b.Service.Check.Type == model.REST {
+					resp := httpclient.MakeRequest(b.Service.Check.CheckCommand)
+					if resp == nil {
+						err := b.repo.UpdateServiceStatus(model.UpdateServiceParams{
+							Status:      &down,
+							ServiceName: &b.Service.ServiceName,
+						})
+						if err != nil {
+							b.Errors <- err
+						}
 						b.Errors <- err
+						continue
 					}
-					b.Errors <- err
-					continue
-				}
-				if resp.StatusCode >= 200 || resp.StatusCode <= 299 {
-					ready := model.Ready
-					err := b.repo.UpdateService(model.UpdateServiceParams{
-						Status:      &ready,
-						ServiceName: &b.ServiceName,
-					})
-					if err != nil {
-						b.Errors <- err
+					if resp.StatusCode >= 200 || resp.StatusCode <= 299 {
+						ready := model.Ready
+						err := b.repo.UpdateServiceStatus(model.UpdateServiceParams{
+							Status:      &ready,
+							ServiceName: &b.Service.ServiceName,
+						})
+						if err != nil {
+							b.Errors <- err
+						}
+					} else {
+						invalid := model.InvalidEndpoint
+						err := b.repo.UpdateServiceStatus(model.UpdateServiceParams{
+							Status:      &invalid,
+							ServiceName: &b.Service.ServiceName,
+						})
+						if err != nil {
+							b.Errors <- err
+						}
+						b.Errors <- ErrServiceUnabailable
 					}
 				} else {
-					ready := model.InvalidEndpoint
-					err := b.repo.UpdateService(model.UpdateServiceParams{
+					comand := strings.Split(b.Service.Check.CheckCommand, " ")
+					cmd := exec.Command(comand[0], comand[1:]...)
+					output, err := cmd.CombinedOutput()
+					statusCode := cmd.ProcessState.ExitCode()
+					if err != nil {
+						enhancedErr := fmt.Sprintf("failed to execute the comand: %s", output)
+						switch statusCode {
+						case 1:
+							b.Errors <- fmt.Errorf("file or directory not found: %s", enhancedErr)
+						case 2:
+							b.Errors <- fmt.Errorf("bad use of the command: %s", enhancedErr)
+						default:
+							b.Errors <- fmt.Errorf("unexpected error code when executing the command: code %d: output: %s", statusCode, enhancedErr)
+						}
+						invalid := model.InvalidCheckCommand
+						err := b.repo.UpdateServiceStatus(model.UpdateServiceParams{
+							Status:      &invalid,
+							ServiceName: &b.Service.ServiceName,
+						})
+						if err != nil {
+							b.Errors <- err
+						}
+						b.Errors <- ErrServiceUnabailable
+						continue
+					}
+					// service is ok
+					ready := model.Ready
+					err = b.repo.UpdateServiceStatus(model.UpdateServiceParams{
 						Status:      &ready,
-						ServiceName: &b.ServiceName,
+						ServiceName: &b.Service.ServiceName,
 					})
 					if err != nil {
 						b.Errors <- err
 					}
-					b.Errors <- ErrServiceUnabailable
 				}
 			case <-b.done:
 				tick.Stop()

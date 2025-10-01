@@ -1,0 +1,9 @@
+{
+  "service_name": "serverv2_service",
+  "check": {
+    "type": "cmd",
+    "check_command": "curl http://localhost:4000/ping"
+  },
+  "ping_time": "10s",
+  "command": "/home/k8s-server/work/service-check/build/test_server"
+}

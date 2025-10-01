@@ -37,7 +37,7 @@ func NewServiceManager(db *sql.DB) *ServiceManager {
 
 // CreateService registrer a new service in the process manager and save it in the database
 // also creates a new sistem service with the cmd
-func (sm *ServiceManager) CreateService(name, healtCheckEndpoint, command string, pingTime time.Duration, stdout, stderr *os.File, args []string) (int, error) {
+func (sm *ServiceManager) CreateService(name, healtCheckEndpoint string, checkType model.CheckType, serviceInitCommand, checkCommand string, pingTime time.Duration, stdout, stderr *os.File, args []string) (int, error) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -45,7 +45,7 @@ func (sm *ServiceManager) CreateService(name, healtCheckEndpoint, command string
 		return 0, fmt.Errorf("the service '%s' already exists", name)
 	}
 
-	cmd := exec.Command(command, args...)
+	cmd := exec.Command(serviceInitCommand, args...)
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
@@ -61,14 +61,31 @@ func (sm *ServiceManager) CreateService(name, healtCheckEndpoint, command string
 	cleaner := make([]func() error, 0)
 	cleaner = append(cleaner, stderr.Close, stdout.Close)
 
-	sm.Services[name] = NewBackgroundProcessChecker(&model.Service{
-		ServiceName:        name,
-		StartupTime:        time.Now(),
-		Status:             model.Bootstraping,
-		Command:            command,
-		HealtCheckEndpoint: healtCheckEndpoint,
-		PingTime:           &pingTime,
-	}, sm.repo, pid, cleaner)
+	if checkType == model.REST {
+		sm.Services[name] = NewBackgroundProcessChecker(&model.Service{
+			ServiceName: name,
+			StartupTime: time.Now(),
+			Status:      model.Bootstraping,
+			Check: model.Check{
+				Type:         model.REST,
+				CheckCommand: healtCheckEndpoint,
+			},
+			PingTime:    &pingTime,
+			ExecCommand: serviceInitCommand,
+		}, sm.repo, pid, cleaner)
+	} else {
+		sm.Services[name] = NewBackgroundProcessChecker(&model.Service{
+			ServiceName: name,
+			StartupTime: time.Now(),
+			Status:      model.Bootstraping,
+			Check: model.Check{
+				Type:         model.CMD,
+				CheckCommand: checkCommand,
+			},
+			PingTime:    &pingTime,
+			ExecCommand: serviceInitCommand,
+		}, sm.repo, pid, cleaner)
+	}
 
 	// Run the service as a command
 	sm.Services[name].Run()

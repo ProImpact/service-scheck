@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	netrpc "net/rpc"
 	"os"
+	"strings"
 
 	"github.com/ProImpact/service-check/internal/rpc"
 	"github.com/ProImpact/service-check/pkg/model"
@@ -45,12 +46,13 @@ var createCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		defer client.Close()
+		m.Check.Type = strings.ToUpper(m.Check.Type)
 		rpcArgs := &rpc.ServiceArgs{
 			Service: model.ServiceCreate{
-				ServiceName:        m.ServiceName,
-				Command:            m.Command,
-				HealtCheckEndpoint: m.HealtCheckEndpoint,
-				PingTime:           m.PingTime,
+				ServiceName: m.ServiceName,
+				Check:       m.Check,
+				PingTime:    m.PingTime,
+				Command:     m.Command,
 			},
 		}
 		reply := false

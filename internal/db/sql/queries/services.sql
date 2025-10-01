@@ -9,17 +9,24 @@ SELECT * FROM "services" WHERE "service_name" = ?;
 DELETE FROM "services" WHERE "service_name" = ?;
 
 -- name: ServiceCreate :exec
-INSERT INTO "services" ("id","service_name","startup_time","status","command","healtcheck_endpoint","ping_time","pid")
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO "services" ("id","service_name","command_type","cmd_check_command","startup_time","status","execute_command","healtcheck_endpoint","ping_time","pid")
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: ServiceFullUpdate :exec
 UPDATE services SET 
     "service_name" = ?,
     "status" = ?,
-    "command" = ?,
+    "execute_command" = ?,
     "healtcheck_endpoint" = ?,
     "ping_time" = ?,
-    "pid" = ?
+    "pid" = ?,
+    "command_type" = ?,
+    "cmd_check_command" = ?
+WHERE "service_name" = ?;
+
+-- name: ServiceUpdateStatus :exec
+UPDATE services SET 
+    "status" = ?
 WHERE "service_name" = ?;
 
 
