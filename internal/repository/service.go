@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"time"
@@ -31,7 +32,7 @@ func (repo *ServiceRepository) CreateService(service model.Service) error {
 	_, err := repo.queries.ServiceGetByName(context.Background(), service.ServiceName)
 	if errors.Is(err, sql.ErrNoRows) {
 		return repo.queries.ServiceCreate(context.Background(), db.ServiceCreateParams{
-			ID:                 string(sha256.New().Sum([]byte(service.ServiceName))),
+			ID:                 hex.EncodeToString(sha256.New().Sum([]byte(service.ServiceName))),
 			ServiceName:        service.ServiceName,
 			StartupTime:        time.Now(),
 			Status:             string(model.Ready),
@@ -105,6 +106,7 @@ func (repo *ServiceRepository) UpdateService(params model.UpdateServiceParams) e
 		HealtcheckEndpoint: srv.HealtcheckEndpoint,
 		PingTime:           srv.PingTime,
 		ServiceName_2:      *params.ServiceName,
+		Pid:                srv.Pid,
 	})
 }
 

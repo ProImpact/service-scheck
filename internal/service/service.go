@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -86,6 +87,13 @@ func (sm *ServiceManager) CreateService(name, healtCheckEndpoint, command string
 		err := cmd.Wait()
 		if err != nil {
 			slog.Warn("Error creating the service", "service", name, "pid", pid, "exit_error", err)
+			if strings.Contains(err.Error(), "signal: terminated") {
+				err = sm.repo.DeleteService(name)
+				if err != nil {
+					slog.Warn("error traying to delete the service from the database when signal terminated", "error", err.Error())
+				}
+				sm.StopService(name)
+			}
 		}
 		time.Sleep(time.Second * 2)
 		if cmd.Err != nil {

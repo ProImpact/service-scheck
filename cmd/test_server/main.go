@@ -18,5 +18,6 @@ func main() {
 	})
 	addrs := fmt.Sprintf(":%d", *port)
 	slog.Info("server started", "port", *port)
+	slog.Info("new hello from web server")
 	log.Fatal(http.ListenAndServe(addrs, router))
 }

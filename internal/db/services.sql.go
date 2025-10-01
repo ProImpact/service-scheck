@@ -68,7 +68,8 @@ UPDATE services SET
     "status" = ?,
     "command" = ?,
     "healtcheck_endpoint" = ?,
-    "ping_time" = ?
+    "ping_time" = ?,
+    "pid" = ?
 WHERE "service_name" = ?
 `
 
@@ -78,6 +79,7 @@ type ServiceFullUpdateParams struct {
 	Command            string `json:"command"`
 	HealtcheckEndpoint string `json:"healtcheck_endpoint"`
 	PingTime           string `json:"ping_time"`
+	Pid                int64  `json:"pid"`
 	ServiceName_2      string `json:"service_name_2"`
 }
 
@@ -88,6 +90,7 @@ func (q *Queries) ServiceFullUpdate(ctx context.Context, arg ServiceFullUpdatePa
 		arg.Command,
 		arg.HealtcheckEndpoint,
 		arg.PingTime,
+		arg.Pid,
 		arg.ServiceName_2,
 	)
 	return err

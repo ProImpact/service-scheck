@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"log/slog"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -31,6 +33,7 @@ func CheckServices(database *sql.DB, process *service.ServiceManager, logsDir st
 				fmt.Sprintf(
 					"the service %s appears to be down becouse the endpoint is not avaliable or the endpoint is incorrect", srv.ServiceName,
 				),
+				"pid", srv.Pid,
 			)
 			fout, ferr, err := pkg.CreateLogsServicesFolderStructure(logsDir, srv.ServiceName)
 			if err != nil {
@@ -41,7 +44,19 @@ func CheckServices(database *sql.DB, process *service.ServiceManager, logsDir st
 			if err != nil {
 				panic(err)
 			}
-			_, err = process.CreateService(
+			cmd := exec.Command("kill", fmt.Sprintf("%d", srv.Pid))
+			err = cmd.Start()
+			if err != nil {
+				slog.Error("SIGTERM falló, intentando con SIGKILL...", "service", srv.ServiceName, "error", err.Error())
+				log.Fatal(err)
+			}
+			go func() {
+				err = cmd.Wait()
+				if err != nil {
+					slog.Error(err.Error())
+				}
+			}()
+			pid, err := process.CreateService(
 				srv.ServiceName,
 				srv.HealtcheckEndpoint,
 				srv.Command,
@@ -51,9 +66,21 @@ func CheckServices(database *sql.DB, process *service.ServiceManager, logsDir st
 				args[1:],
 			)
 			if err != nil {
-				panic(err)
+				panic(err.Error())
 			}
-			slog.Info("service recreated", "name", srv.ServiceName, "pid", srv.Pid)
+			err = queries.ServiceFullUpdate(context.Background(), db.ServiceFullUpdateParams{
+				ServiceName:        srv.ServiceName,
+				Status:             srv.Status,
+				Command:            srv.Command,
+				HealtcheckEndpoint: srv.HealtcheckEndpoint,
+				PingTime:           srv.PingTime,
+				ServiceName_2:      srv.ServiceName,
+				Pid:                int64(pid),
+			})
+			if err != nil {
+				panic(err.Error())
+			}
+			slog.Info("service recreated", "name", srv.ServiceName, "pid", pid)
 			continue
 		}
 		startupTime := srv.StartupTime.(time.Time)

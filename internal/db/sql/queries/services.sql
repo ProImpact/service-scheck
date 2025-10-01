@@ -18,7 +18,8 @@ UPDATE services SET
     "status" = ?,
     "command" = ?,
     "healtcheck_endpoint" = ?,
-    "ping_time" = ?
+    "ping_time" = ?,
+    "pid" = ?
 WHERE "service_name" = ?;
 
 
