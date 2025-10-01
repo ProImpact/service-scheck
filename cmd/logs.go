@@ -9,7 +9,7 @@ import (
 	netrpc "net/rpc"
 	"os"
 
-	"github.com/ProImpact/passboult/internal/rpc"
+	"github.com/ProImpact/service-check/internal/rpc"
 	"github.com/spf13/cobra"
 )
 

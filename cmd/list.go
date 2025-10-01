@@ -8,8 +8,8 @@ import (
 	netrpc "net/rpc"
 	"os"
 
-	"github.com/ProImpact/passboult/internal/rpc"
-	"github.com/ProImpact/passboult/pkg"
+	"github.com/ProImpact/service-check/internal/rpc"
+	"github.com/ProImpact/service-check/pkg"
 	"github.com/spf13/cobra"
 )
 

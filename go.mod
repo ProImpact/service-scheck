@@ -1,4 +1,4 @@
-module github.com/ProImpact/passboult
+module github.com/ProImpact/service-check
 
 go 1.24.4
 

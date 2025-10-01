@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ProImpact/passboult/internal/event"
-	"github.com/ProImpact/passboult/internal/repository"
-	"github.com/ProImpact/passboult/internal/service"
-	"github.com/ProImpact/passboult/pkg"
-	model "github.com/ProImpact/passboult/pkg/model"
+	"github.com/ProImpact/service-check/internal/event"
+	"github.com/ProImpact/service-check/internal/repository"
+	"github.com/ProImpact/service-check/internal/service"
+	"github.com/ProImpact/service-check/pkg"
+	model "github.com/ProImpact/service-check/pkg/model"
 )
 
 type Server struct {

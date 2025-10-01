@@ -3,7 +3,7 @@ package httpclient_test
 import (
 	"testing"
 
-	"github.com/ProImpact/passboult/pkg/httpclient"
+	"github.com/ProImpact/service-check/pkg/httpclient"
 )
 
 func TestMakeRequest(t *testing.T) {

@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ProImpact/passboult/internal/db"
-	"github.com/ProImpact/passboult/internal/repository"
-	"github.com/ProImpact/passboult/internal/service"
-	"github.com/ProImpact/passboult/pkg"
-	"github.com/ProImpact/passboult/pkg/httpclient"
-	"github.com/ProImpact/passboult/pkg/model"
+	"github.com/ProImpact/service-check/internal/db"
+	"github.com/ProImpact/service-check/internal/repository"
+	"github.com/ProImpact/service-check/internal/service"
+	"github.com/ProImpact/service-check/pkg"
+	"github.com/ProImpact/service-check/pkg/httpclient"
+	"github.com/ProImpact/service-check/pkg/model"
 )
 
 func CheckServices(database *sql.DB, process *service.ServiceManager, logsDir string) {

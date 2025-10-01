@@ -11,10 +11,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ProImpact/passboult/internal/config"
-	"github.com/ProImpact/passboult/internal/db/sql"
-	"github.com/ProImpact/passboult/internal/repository"
-	"github.com/ProImpact/passboult/internal/rpc"
+	"github.com/ProImpact/service-check/internal/config"
+	"github.com/ProImpact/service-check/internal/db/sql"
+	"github.com/ProImpact/service-check/internal/repository"
+	"github.com/ProImpact/service-check/internal/rpc"
 )
 
 type ServerApp struct {

@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ProImpact/passboult/internal/repository"
-	"github.com/ProImpact/passboult/pkg/model"
+	"github.com/ProImpact/service-check/internal/repository"
+	"github.com/ProImpact/service-check/pkg/model"
 )
 
 type Service struct {

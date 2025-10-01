@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/ProImpact/passboult/pkg/model"
+	"github.com/ProImpact/service-check/pkg/model"
 )
 
 type ServiceServicer interface {

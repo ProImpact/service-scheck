@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/ProImpact/passboult/internal/app"
-	"github.com/ProImpact/passboult/internal/config"
+	"github.com/ProImpact/service-check/internal/app"
+	"github.com/ProImpact/service-check/internal/config"
 )
 
 var configFile = flag.String("config", "server-config.json", "Configuration file")

@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/ProImpact/passboult/internal/db"
-	"github.com/ProImpact/passboult/pkg/model"
+	"github.com/ProImpact/service-check/internal/db"
+	"github.com/ProImpact/service-check/pkg/model"
 )
 
 var ErrServiceAlreadyCreated = errors.New("service already created")

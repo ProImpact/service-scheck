@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/ProImpact/passboult/internal/repository"
-	"github.com/ProImpact/passboult/pkg/httpclient"
-	"github.com/ProImpact/passboult/pkg/model"
+	"github.com/ProImpact/service-check/internal/repository"
+	"github.com/ProImpact/service-check/pkg/httpclient"
+	"github.com/ProImpact/service-check/pkg/model"
 )
 
 // BackgroundProcessCheker check for the healtyness of a service

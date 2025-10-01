@@ -10,8 +10,8 @@ import (
 	netrpc "net/rpc"
 	"os"
 
-	"github.com/ProImpact/passboult/internal/rpc"
-	"github.com/ProImpact/passboult/pkg/model"
+	"github.com/ProImpact/service-check/internal/rpc"
+	"github.com/ProImpact/service-check/pkg/model"
 	"github.com/spf13/cobra"
 )
 
