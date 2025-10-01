@@ -14,6 +14,7 @@ import (
 var configFile = flag.String("config", "server-config.json", "Configuration file")
 
 func main() {
+	flag.Parse()
 	f, err := os.Open(*configFile)
 	if err != nil {
 		log.Fatal(err)

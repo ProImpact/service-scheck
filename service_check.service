@@ -5,13 +5,10 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
-Group=services
-WorkingDirectory=/services
-ExecStart=/services/on_startup/service_check
+Group=sudo
+ExecStart=/home/k8s-server/services/on_startup/service_check_server -config /home/k8s-server/services/on_startup/server-config.json
 Restart=on-failure
 RestartSec=5
-Environment=ENV_VAR1=value1 ENV_VAR2=value2
 
 [Install]
 WantedBy=multi-user.target
